@@ -71,6 +71,44 @@ async function run() {
       }
     });
 
+    // 🟨 ADD LISTING API (POST)
+    app.post("/add-listing", async (req, res) => {
+      try {
+        console.log("Received new listing data:", req.body);
+        const { name, category, description, image, location, email, Price } =
+          req.body;
+
+        // 🕒 Auto-generate current date (YYYY-MM-DD)
+        const date = new Date().toISOString().split("T")[0];
+
+        // 🧩 Create new listing object
+        const newListing = {
+          name,
+          category,
+          Price,
+          location,
+          description,
+          image,
+          email,
+          date,
+        };
+
+        const result = await listingCollection.insertOne(newListing);
+
+        res.send({
+          message: "Listing added successfully!",
+          insertedId: result.insertedId,
+        });
+        // res.status(201).json({
+        //   message: "Listing added successfully!",
+        //   insertedId: result.insertedId,
+        // });
+      } catch (error) {
+        console.error("Error adding listing:", error);
+        res.status(500).json({ message: "Failed to add listing" });
+      }
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
