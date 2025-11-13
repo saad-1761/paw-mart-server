@@ -180,6 +180,25 @@ async function run() {
       }
     });
 
+    // Delete a listing by ID
+    app.delete("/listing/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const result = await listingCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ message: "Listing not found" });
+        }
+
+        res.json({ message: "Listing deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting listing:", error);
+        res.status(500).json({ message: "Server error" });
+      }
+    });
+
     // ✅ Post new order
     app.post("/orders", async (req, res) => {
       try {
