@@ -5,15 +5,16 @@ const e = require("express");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 3000;
-
+//middleware
+dotenv = require("dotenv");
+dotenv.config();
 app.use(express.json());
 app.use(cors());
 
 //pawMartDbUser
 //XcKWT2EbCndEmrWS
 
-const uri =
-  "mongodb+srv://pawMartDbUser:XcKWT2EbCndEmrWS@cluster0.ddutyub.mongodb.net/?appName=Cluster0";
+const uri = process.env.MONGODB_URI;
 
 const client = new MongoClient(uri, {
   serverApi: {
