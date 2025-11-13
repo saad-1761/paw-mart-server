@@ -11,9 +11,6 @@ dotenv.config();
 app.use(express.json());
 app.use(cors());
 
-//pawMartDbUser
-//XcKWT2EbCndEmrWS
-
 const uri = process.env.MONGODB_URI;
 
 const client = new MongoClient(uri, {
