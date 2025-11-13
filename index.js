@@ -1,4 +1,5 @@
 const express = require("express");
+const { ObjectId } = require("mongodb");
 const cors = require("cors");
 const e = require("express");
 const { MongoClient, ServerApiVersion } = require("mongodb");
@@ -49,6 +50,27 @@ async function run() {
         .limit(6)
         .toArray();
       res.send(result);
+    });
+
+    // Fetch single product by ID
+    app.get("/listings/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        console.log("Fetching product with ID:", id, typeof id);
+        const product = await listingCollection.findOne({
+          _id: new ObjectId(id),
+        });
+        console.log("Fetched product:", product);
+
+        if (!product) {
+          return res.status(404).json({ message: "Product not found" });
+        }
+
+        res.send(product);
+      } catch (error) {
+        console.error("Error fetching product:", error);
+        res.status(500).json({ message: "Server error" });
+      }
     });
 
     // Fetch data by category
@@ -106,6 +128,93 @@ async function run() {
       } catch (error) {
         console.error("Error adding listing:", error);
         res.status(500).json({ message: "Failed to add listing" });
+      }
+    });
+
+    // Fetch listings by user email
+    app.get("/my-listings/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const userListings = await listingCollection.find({ email }).toArray();
+
+        if (!userListings.length) {
+          return res
+            .status(404)
+            .json({ message: "No listings found for this user" });
+        }
+
+        res.status(200).json(userListings);
+      } catch (error) {
+        console.error("Error fetching user's listings:", error);
+        res.status(500).json({ message: "Server error" });
+      }
+    });
+
+    // Update listing by ID
+    app.put("/listing/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const updateData = { ...req.body };
+
+        // Remove _id if present in request body
+        delete updateData._id;
+
+        // Update the date to current
+        updateData.date = new Date().toLocaleDateString();
+
+        const result = await listingCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updateData }
+        );
+
+        if (result.modifiedCount === 0) {
+          return res
+            .status(404)
+            .json({ message: "Listing not found or no changes made" });
+        }
+
+        res.json({ message: "Listing updated successfully" });
+      } catch (error) {
+        console.error("Error updating listing:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+      }
+    });
+
+    // ✅ Post new order
+    app.post("/orders", async (req, res) => {
+      try {
+        const orderData = req.body;
+
+        if (!orderData.productId || !orderData.buyerEmail) {
+          return res.status(400).json({ message: "Invalid order data" });
+        }
+
+        const result = await orderCollection.insertOne(orderData);
+        res.status(201).json({
+          message: "Order placed successfully",
+          insertedId: result.insertedId,
+        });
+      } catch (error) {
+        console.error("Error placing order:", error);
+        res.status(500).json({ message: "Server error" });
+      }
+    });
+
+    // GET orders for a specific buyer (by email)
+    app.get("/my-orders/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        if (!email) return res.status(400).json({ message: "Email required" });
+
+        const orders = await orderCollection
+          .find({ buyerEmail: email })
+          .sort({ date: -1 }) // newest first (if date stored sortable)
+          .toArray();
+
+        res.status(200).json(orders);
+      } catch (error) {
+        console.error("Error fetching user orders:", error);
+        res.status(500).json({ message: "Server error" });
       }
     });
 
